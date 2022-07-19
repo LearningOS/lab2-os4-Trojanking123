@@ -141,17 +141,25 @@ pub fn translated_byte_buffer(token: usize, ptr: *const u8, len: usize) -> Vec<&
     let mut v = Vec::new();
     while start < end {
         let start_va = VirtAddr::from(start);
+        //info!("start_va: {:?}", start_va);
         let mut vpn = start_va.floor();
         let ppn = page_table.translate(vpn).unwrap().ppn();
         vpn.step();
         let mut end_va: VirtAddr = vpn.into();
+        //info!("end_va1: {:?}", end_va);
+        //info!("virt addr of end: {:?}", VirtAddr::from(end));
         end_va = end_va.min(VirtAddr::from(end));
+        //info!("end_va2: {:?}", end_va);
         if end_va.page_offset() == 0 {
+            //info!("page offset is zero");
             v.push(&mut ppn.get_bytes_array()[start_va.page_offset()..]);
         } else {
+            //info!("page offset not zero");
             v.push(&mut ppn.get_bytes_array()[start_va.page_offset()..end_va.page_offset()]);
         }
         start = end_va.into();
     }
     v
 }
+
+

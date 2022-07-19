@@ -1,8 +1,12 @@
 //! Process management syscalls
 
 use crate::config::MAX_SYSCALL_NUM;
-use crate::task::{exit_current_and_run_next, suspend_current_and_run_next, TaskStatus};
+use crate::task::{exit_current_and_run_next, suspend_current_and_run_next, TaskStatus, TASK_MANAGER, get_task_info_inner};
 use crate::timer::get_time_us;
+use crate::mm::translated_byte_buffer;
+use crate::task::current_user_token;
+use crate::mm::PageTable;
+use crate::mm::VirtAddr;
 
 #[repr(C)]
 #[derive(Debug)]
@@ -30,15 +34,46 @@ pub fn sys_yield() -> isize {
     0
 }
 
+
+
 // YOUR JOB: 引入虚地址后重写 sys_get_time
 pub fn sys_get_time(_ts: *mut TimeVal, _tz: usize) -> isize {
-    let _us = get_time_us();
+    // let page_table = PageTable::from_token(current_user_token());
+    // let mut start = _tz as usize;
+    // let start_va = VirtAddr::from(start);
+    // let   end_va = VirtAddr::from(start + core::mem::size_of::<TimeVal>()) ;
+    // let mut vpn = start_va.floor();
+    // let ppn = page_table.translate(vpn).unwrap().ppn();
+    // let ts = &mut ppn.get_bytes_array()[start_va.page_offset()..end_va.page_offset()];
+    // let ts = ts.as_mut_ptr() as *mut TimeVal;
+    // info!("tv virt ptr: {:?}", ts);
+    // let us = get_time_us();
     // unsafe {
     //     *ts = TimeVal {
     //         sec: us / 1_000_000,
     //         usec: us % 1_000_000,
     //     };
     // }
+
+    
+    let mut v = translated_byte_buffer( current_user_token(), _ts as *const u8, core::mem::size_of::<TimeVal>());
+    let us = get_time_us();
+    let ts;
+    if v.len() == 1 {
+        let a = v[0].as_mut_ptr();
+        let a: *mut TimeVal  = unsafe { core::mem::transmute(a) };
+        ts = a as *mut TimeVal;
+        unsafe {
+            *ts = TimeVal {
+                sec: us / 1_000_000,
+                usec: us % 1_000_000,
+            };
+        }
+    }else {
+        error!("cross two page !!!!!");
+    }
+
+    
     0
 }
 
@@ -57,6 +92,36 @@ pub fn sys_munmap(_start: usize, _len: usize) -> isize {
 }
 
 // YOUR JOB: 引入虚地址后重写 sys_task_info
+
+
 pub fn sys_task_info(ti: *mut TaskInfo) -> isize {
-    -1
+    info!("call task info api");
+    info!("ti virt ptr: {:?}", ti as usize);
+
+    let page_table = PageTable::from_token(current_user_token());
+    let mut start = ti as usize;
+    let start_va = VirtAddr::from(start);
+    let mut vpn = start_va.floor();
+    let ppn = page_table.translate(vpn).unwrap().ppn();
+    let ti = ppn.get_mut::<TaskInfo>() as *mut TaskInfo;
+    println!("ti ptr: {:?}", ti as usize);
+    /*  
+    let ll = core::mem::size_of::<TaskInfo>();
+    info!("ll: {:?}", ll);
+    let mut v = translated_byte_buffer( current_user_token(), ti as *const u8, ll);
+    if v.len() == 1 {
+        info!("len of task vec is 1 !");
+        let a = v[0].as_mut_ptr();
+        let ti: *mut TaskInfo  = unsafe { core::mem::transmute(a) };
+        info!("before inner");
+        get_task_info_inner(ti);
+    }else {
+        error!("cross two page !!!!!");
+        panic!("!!!!");
+    }
+    */
+    
+    get_task_info_inner(ti) ;
+    
+    0
 }

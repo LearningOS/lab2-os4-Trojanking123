@@ -89,7 +89,7 @@ impl From<VirtPageNum> for usize {
 }
 
 impl VirtAddr {
-    pub fn floor(&self) -> VirtPageNum {
+    pub fn  floor(&self) -> VirtPageNum {
         VirtPageNum(self.0 / PAGE_SIZE)
     }
     pub fn ceil(&self) -> VirtPageNum {
