@@ -12,6 +12,7 @@ use user_lib::{get_time, yield_};
 
 #[no_mangle]
 fn main() -> i32 {
+    println!("ch3b_sleep!!!!");
     let current_time = get_time();
     assert!(current_time > 0);
     println!("get_time OK! {}", current_time);
