@@ -16,6 +16,7 @@ fn main() -> i32 {
     let len: usize = 4096;
     let prot: usize = 3;
     assert_eq!(0, mmap(start, len, prot));
+    //println!("gggggggggggggggggggggggggg");
     assert_eq!(mmap(start - len, len + 1, prot), -1);
     assert_eq!(mmap(start + len + 1, len, prot), -1);
     assert_eq!(mmap(start + len, len, 0), -1);

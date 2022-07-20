@@ -14,7 +14,7 @@ mod switch;
 #[allow(clippy::module_inception)]
 mod task;
 
-use crate::loader::{get_app_data, get_num_app};
+use crate::{loader::{get_app_data, get_num_app}, mm::VirtAddr};
 use crate::sync::UPSafeCell;
 use crate::trap::TrapContext;
 use alloc::vec::Vec;
@@ -193,6 +193,18 @@ impl TaskManager {
         inner.tasks[current].syscall_times.clone()
     }
 
+    fn mmap(&self, start: usize, len: usize, port: usize) -> isize {
+        let mut inner = self.inner.exclusive_access();
+        let current = inner.current_task;
+        inner.tasks[current].memory_set.mmap(start, len, port)
+    }
+
+    fn munmap(&self, start: usize, len: usize ) -> isize {
+        let mut inner = self.inner.exclusive_access();
+        let current = inner.current_task;
+        inner.tasks[current].memory_set.munmap(start, len)
+    }
+
 }
 
 /// Run the first task in task list.
@@ -242,15 +254,12 @@ pub fn add_one_while_syscall(id: usize) {
     TASK_MANAGER.add_one_to_current_task(id);
 }
 
+
 use super::syscall::TaskInfo;
 pub fn get_task_info_inner(t: *mut TaskInfo) {
     let a = TASK_MANAGER.get_current_task_status();
     let b = TASK_MANAGER.get_current_task_syscall_times();
     let c = TASK_MANAGER.get_current_task_costed_time();
-    //info!("get info okkkkkkkkkk");
-    //info!("a : {:?}", a);
-    //info!("b : {:?}", b.clone());
-    //info!("c : {:?}", c);
     unsafe {
         *t = TaskInfo {
             
@@ -260,4 +269,20 @@ pub fn get_task_info_inner(t: *mut TaskInfo) {
         }
     }
 
+}
+
+pub fn sys_mmap_inner(start: usize, len: usize, port: usize) -> isize {
+    let va = VirtAddr(start);
+    if ! va.aligned() || port & !0x7 != 0  || port & 0x7 == 0 {
+        return -1;
+    }
+    TASK_MANAGER.mmap(start, len, port)
+}
+
+pub fn sys_munmap_inner(start: usize, len: usize ) -> isize {
+    let va = VirtAddr(start);
+    if ! va.aligned()  {
+        return -1;
+    }
+    TASK_MANAGER.munmap(start, len)
 }
