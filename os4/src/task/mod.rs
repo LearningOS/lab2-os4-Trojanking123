@@ -247,10 +247,10 @@ pub fn get_task_info_inner(t: *mut TaskInfo) {
     let a = TASK_MANAGER.get_current_task_status();
     let b = TASK_MANAGER.get_current_task_syscall_times();
     let c = TASK_MANAGER.get_current_task_costed_time();
-    info!("get info okkkkkkkkkk");
-    info!("a : {:?}", a);
-    info!("b : {:?}", b.clone());
-    info!("c : {:?}", c);
+    //info!("get info okkkkkkkkkk");
+    //info!("a : {:?}", a);
+    //info!("b : {:?}", b.clone());
+    //info!("c : {:?}", c);
     unsafe {
         *t = TaskInfo {
             

@@ -61,8 +61,10 @@ pub fn sys_get_time(_ts: *mut TimeVal, _tz: usize) -> isize {
     let ts;
     if v.len() == 1 {
         let a = v[0].as_mut_ptr();
+        //info!("a as ptr: {:?}", a);
         let a: *mut TimeVal  = unsafe { core::mem::transmute(a) };
         ts = a as *mut TimeVal;
+        
         unsafe {
             *ts = TimeVal {
                 sec: us / 1_000_000,
@@ -95,33 +97,36 @@ pub fn sys_munmap(_start: usize, _len: usize) -> isize {
 
 
 pub fn sys_task_info(ti: *mut TaskInfo) -> isize {
-    info!("call task info api");
-    info!("ti virt ptr: {:?}", ti as usize);
+    //info!("call task info api");
+    //info!("ti virt ptr: {:?}", ti as usize);
 
-    let page_table = PageTable::from_token(current_user_token());
-    let mut start = ti as usize;
-    let start_va = VirtAddr::from(start);
-    let mut vpn = start_va.floor();
-    let ppn = page_table.translate(vpn).unwrap().ppn();
-    let ti = ppn.get_mut::<TaskInfo>() as *mut TaskInfo;
-    println!("ti ptr: {:?}", ti as usize);
-    /*  
+    // let page_table = PageTable::from_token(current_user_token());
+    // let mut start = ti as usize;
+    // let start_va = VirtAddr::from(start);
+    // let mut vpn = start_va.floor();
+    // let ppn = page_table.translate(vpn).unwrap().ppn();
+    // let ti = ppn.get_mut::<TaskInfo>() as *mut TaskInfo;
+    // println!("ti ptr: {:?}", ti as usize);
+    
+     
     let ll = core::mem::size_of::<TaskInfo>();
     info!("ll: {:?}", ll);
     let mut v = translated_byte_buffer( current_user_token(), ti as *const u8, ll);
     if v.len() == 1 {
-        info!("len of task vec is 1 !");
+        //info!("len of task vec is 1 !");
         let a = v[0].as_mut_ptr();
+        info!("taskinfo a ptr {:?}", a);
         let ti: *mut TaskInfo  = unsafe { core::mem::transmute(a) };
-        info!("before inner");
+        //info!("taskinfo ti ptr {:?}", a);
+        //info!("before inner");
         get_task_info_inner(ti);
     }else {
         error!("cross two page !!!!!");
         panic!("!!!!");
     }
-    */
     
-    get_task_info_inner(ti) ;
+    
+    //get_task_info_inner(ti) ;
     
     0
 }
